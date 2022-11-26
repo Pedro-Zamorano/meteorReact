@@ -6,11 +6,9 @@ import { getLastDigitOfRut } from 'rutlib';
 
 import regCol from '/imports/api/regCol.json'
 
-/* for(i in regCol){
-  //console.log(i);
-  
-}
-console.log(regCol[0].comunas); */
+const regiones = regCol.regiones.map(a => a.region);
+let comunas = [];
+
 
 export const PacientesForm = () => {
   const { register, handleSubmit, reset, formState: { errors }} = useForm(); 
@@ -24,8 +22,8 @@ export const PacientesForm = () => {
       info.push(data[clave]);
     }
 
-    // Viendo los datos que se reciben del formulario (BORRAR)
-    console.log(info);
+    // Viendo los datos que se reciben del formulario
+    //console.log(info);
 
     // Verificando si el rut es valido
     if(validateRut(info[3]) && getLastDigitOfRut(info[3])){
@@ -44,29 +42,40 @@ export const PacientesForm = () => {
           }
         }
       }
-
       // Si el rut no existe, crea el registro
-      if(info[3] != dataInDB[i]['rut']){
-        // Enviando informacion a MongoDB
-        const datos = data;
-        PacientesCollection.insert(datos);
-        
-        // Limpiando campos del formulario
-        reset();
-        // Alerta de registro
-        alert("Datos ingresados en el sistema")
-      }
+      // Enviando informacion a MongoDB
+      const datos = data;
+      PacientesCollection.insert(datos);
+      
+      // Limpiando campos del formulario
+      reset();
+      // Alerta de registro
+      alert("Datos ingresados en el sistema")
     
     }else{
       alert("El rut ingresado no es valido");
     }
   }
 
+  // Capturando dato del select-Region
   const handleRegion=(e)=>{
-    const getRegion = e.target.value;
-    console.log(e.target);
-  }
+    //console.log(e.target.value);
+    regionIndex = regiones.indexOf(e.target.value);
+    comunas = regCol.regiones.map(a => a.comunas)[regionIndex];
 
+    // Limpiando datos en Select-Comuna
+    const select = document.querySelector("#comunas");
+    select.innerHTML= "";
+
+    // Iterando datos en Option-Comuna
+    comunas.forEach(dataCom => {
+      const option = document.createRange().createContextualFragment(/*html*/`
+        <option value=${dataCom}>${dataCom}</option>
+        `);
+        const select = document.querySelector("#comunas");
+        select.append(option);
+    });
+  }
 
   return (
     <form className="task-form" onSubmit={handleSubmit(onSubmit)}>
@@ -108,18 +117,14 @@ export const PacientesForm = () => {
         aria-invalid={errors.rut ? "true" : "false"}        
         />
 
-      {/* AQUI VA EL DROPDOWN */}
       <label>Región:</label><br/>
       {errors.region && <p role="alert">{errors.region?.message}</p>}
-      <select className="select-task" id='region' onChange={(e)=>handleRegion(e)} {...register('region', { required: "Campo requerido" })}>
+      <select className="select-task" id='region' onChangeCapture={(e)=>handleRegion(e)} {...register('region', { required: "Campo requerido" })}>
         {
-          // AQUIIIII
-          regCol.map( (getRegion) => (
-            <option value={getRegion.region}>{getRegion.region}</option>
+          // Iterando Regiones
+          regiones.map( (region, index) => (
+            <option value={region} key={index}>{region}</option>
           ))
-
-          
-          
         }
       </select>
 
@@ -128,9 +133,7 @@ export const PacientesForm = () => {
       <label>Comuna:</label><br/>
       {errors.comuna && <p role="alert">{errors.comuna?.message}</p>}
       <select className="select-task" id='comunas' {...register('comuna', { required: "Campo requerido" })}>
-        <option value="kipa">kipa</option>
       </select>
-      {/* AQUI TERMINA EL DROPDOWN */}
 
       <br /><br />
       <label>Código Postal:</label>
